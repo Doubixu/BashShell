@@ -5,19 +5,12 @@
 #
 
 function environment() {
-    if [[ "$USER" != "root" ]]; then
-        echo "Current user is not root"
-        return 1
-    fi
     yum -y install wget curl pcre pcre-devel zlib zlib-devel gcc gcc-c++ &> /tmp/nginx_install.log
-    # getUrl: Input download source address
-    # getUrl='http://172.16.1.1\nginx-1.8.1.tar.gz'
-    wget -P /tmp/ $getUrl/nginx.tar.gz
     grep "nginx" /etc/passwd > /dev/null
-    	if [[ $? -ne 0 ]]; then  # check user and group
-            groupadd nginx
-            useradd -M -g nginx -s /sbin/nologin nginx
-    	fi
+    if [[ $? -ne 0 ]]; then  # check user and group
+        groupadd nginx
+        useradd -M -g nginx -s /sbin/nologin nginx
+    fi
     cd /tmp; tar -zxf nginx.tar.gz; cd nginx
     return 0
 }; environment; [ $? -ne 0 ] && exit 1
@@ -35,14 +28,14 @@ function install() {
         make &> /tmp/nginx_install.log
         make install &> /tmp/nginx_install.log
         if [[ $? -ne 0 ]]; then
-	    return 1
+            return 1
         fi
+        return 0
     fi
-    return 0
 }; install; [ $? -ne 0 ] && exit 1
 
 function optimize() {
-    ln -s /usr/local/nginx/sbin/* /usr/local/sbin/ > /dev/null
+	ln -s /usr/local/nginx/sbin/* /usr/local/sbin/ > /dev/null
     cp -f /tmp/nginx_control.sh /etc/init.d/nginx
     cp -f /tmp/nginx.conf /usr/local/nginx/conf/nginx.conf
     # The number of CPU cores current server,
@@ -76,4 +69,5 @@ function check() {
     # View the index.html, and the output of the modified index.html page
     /etc/init.d/nginx status
     echo -n "Index.html: "; curl http://localhost
+    rm -rf /tmp/nginx*
 }; check
